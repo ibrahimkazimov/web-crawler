@@ -1,5 +1,9 @@
 const puppeteer = require("puppeteer");
 const process = require("process");
+
+
+let phone = new RegExp(`/^\\?\\d{1,4}?[-.\\s]?\\(?\\d{1,3}?\\)?[-.\\s]?\\d{1,4}[-.\\s]?\\d{1,4}[-.\\s]?\\d{1,9}$/`, "g")
+
 const crawl = async (url) => {
   if (!url) {
     throw Error("URL is not provided");
@@ -14,6 +18,7 @@ const crawl = async (url) => {
 
   let arr = [];
   let worth_to_visit = [];
+  let phone_numbers = []
   let visited = [];
   worth_to_visit.push(url);
   await visit();
@@ -28,6 +33,7 @@ const crawl = async (url) => {
     worth_to_visit.shift();
     if (!visited.includes(url_worth)) {
       visited.push(url_worth);
+      console.log(url_worth)
       await page.goto(url_worth);
       // Set screen size
       await page.setViewport({ width: 1080, height: 1024 });
@@ -36,6 +42,11 @@ const crawl = async (url) => {
 
       async function findInfo() {
         const elements = await page.$$("a");
+        const content = (await page.content())
+        const re = /(?:[-+() ]*\d){10,13}/gm; 
+        const crawled_phone_numbers = content.match(re).map(function(s){return s.trim();});
+        phone_numbers = [...new Set(phone_numbers.concat(crawled_phone_numbers))]
+
         for (let i = 0; i < elements.length; i++) {
           const element = elements[i];
           const link = await element.evaluate((el) => el.getAttribute("href"));
@@ -44,11 +55,11 @@ const crawl = async (url) => {
               link &&
               (link.includes("tel:") ||
                 link.includes("mailto:") ||
-                link.includes("youtube") ||
+                (link.includes("http") && (link.includes("youtube") ||
                 link.includes("facebook") ||
                 link.includes("twitter") ||
                 link.includes("linkedin") ||
-                link.includes("instagram"))
+                link.includes("instagram"))))
             ) {
               arr.push(link);
             }
@@ -57,7 +68,7 @@ const crawl = async (url) => {
           if (!worth_to_visit.includes(link)) {
             if (
               link &&
-              (link.includes("iletisim") || link.includes("contact"))
+              (link.includes("iletisim") || link.includes("contact")) && link.includes("http")
             ) {
               worth_to_visit.push(link);
             }
@@ -76,6 +87,9 @@ const crawl = async (url) => {
   console.log("================")
   console.log("USEFUL LINKS")
   console.log("links:", arr);
+  console.log("================")
+  console.log("USEFUL PHONE NUMBERS")
+  console.log("links:", phone_numbers);
   console.log("================")
   console.log("VISITED PAGES")
   console.log(visited)
