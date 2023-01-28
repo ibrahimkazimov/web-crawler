@@ -1,7 +1,7 @@
 
 # Web Crawler
 
-Helps you to get email and phone numbers from websites.
+Helps you to get emails and phone numbers from websites.
 
 
 
